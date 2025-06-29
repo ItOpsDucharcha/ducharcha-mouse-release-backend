@@ -1,44 +1,43 @@
-const authRoutes = require('./src/routes/auth.routes');
+// ==================================
+// 📄 index.js
+// 📌 Entry point of DuCharcha backend server
+// ==================================
 
+// Load environment variables from .env
+require('dotenv').config();
 
-// index.js
-require('dotenv').config(); // Load environment variables
-
-const sequelize = require('./src/config/db');
-const User = require('./src/models/user.model');
-const OTP = require('./src/models/otp.model');
-
-sequelize.sync({ alter: true }) // or force: true if you're testing
-  .then(() => console.log('🧬 DB synced'))
-  .catch(err => console.error('❌ DB sync error:', err));
-
+// Core dependencies
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 
-// Database connection
-const db = require('./src/config/db'); // PostgreSQL pool setup
+// Sequelize DB initialization and models
+const sequelize = require('./src/config/db');
+const User = require('./src/models/user.model');
+const OTP = require('./src/models/otp.model');
+
+// Route handlers
+const authRoutes = require('./src/routes/auth.routes');
+
+// Initialize express app
 const app = express();
 
-// Middlewares
+// ============================
+// ✅ Middleware setup
+// ============================
 app.use(express.json());
 app.use(cors());
 app.use(morgan('dev'));
 
-app.get('/', (req, res) => {
-  res.send('DuCharcha Backend API is up and running!');
-});
-
-app.use('/', authRoutes);
-
-
-// Sample Route
+// ============================
+// ✅ Health Check Route
+// ============================
 app.get('/api/health', async (req, res) => {
   try {
-    const result = await db.query('SELECT NOW()');
+    const result = await sequelize.query('SELECT NOW()');
     res.status(200).json({
       status: 'ok',
-      time: result.rows[0].now,
+      time: result[0][0].now,
     });
   } catch (err) {
     console.error('Health check failed:', err);
@@ -46,12 +45,26 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// TODO: Add your feature routes here
-// app.use('/api/charchas', require('./src/routes/charcha.routes'));
+// ============================
+// ✅ Root & Auth Routes
+// ============================
+app.get('/', (req, res) => {
+  res.send('🚀 DuCharcha Backend API is up and running!');
+});
 
+app.use('/', authRoutes);
 
-const PORT = process.env.PORT || 5000;
+// ============================
+// ✅ Database Sync (Sequelize)
+// ============================
+sequelize.sync() // use { force: true } if you want to drop & recreate
+  .then(() => console.log('🧬 DB synced'))
+  .catch(err => console.error('❌ DB sync error:', err));
 
+// ============================
+// ✅ Start Server
+// ============================
+const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
